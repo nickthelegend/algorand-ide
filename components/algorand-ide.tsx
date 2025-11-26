@@ -40,6 +40,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { TransactionBuilder } from "@/components/transaction-builder"
+import { GitHubLogin } from "@/components/github-login"
 
 interface Wallet {
   address: string
@@ -118,11 +119,9 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         if (parsedWallet && typeof parsedWallet.address === 'string') {
           setWallet(parsedWallet)
         } else {
-          console.error("Invalid wallet data in localStorage:", parsedWallet)
           localStorage.removeItem("algorand-wallet")
         }
       } catch (error) {
-        console.error("Error parsing wallet from localStorage:", error)
         localStorage.removeItem("algorand-wallet")
       }
     }
@@ -168,7 +167,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         handleTerminalOutput(`Failed to load contract: ${result.error || 'Unknown error'}`);
       }
     } catch (error: any) {
-      console.error('[LOAD-CONTRACT] Error:', error);
       handleTerminalOutput(`Failed to load contract: ${error.message || error}`);
     }
   };
@@ -194,10 +192,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       setWallet(newWallet)
       localStorage.setItem("algorand-wallet", JSON.stringify(newWallet))
       
-      console.log("Wallet created! To fund with test ALGO, visit:")
-      console.log(`https://testnet.algoexplorer.io/dispenser?addr=${newWallet.address}`)
     } catch (error) {
-      console.error("Error creating wallet:", error)
     }
   }
 
@@ -277,9 +272,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         const contractName = filename?.replace('.algo.ts', '') || 'contract';
         const code = fileContents[filePath];
         
-        console.log("=== COMPILING FILE ===");
-        console.log(filePath);
-        console.log(code);
         
         if (!code || code.trim().length === 0) {
           handleTerminalOutput(`Skipping empty file: ${filePath}`);
@@ -287,7 +279,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         }
         
         handleTerminalOutput(`Compiling ${filePath}...`);
-        console.log(`[BUILD] PuyaTs compilation started for ${filePath}`);
         
         const response = await fetch('/api/compile', {
           method: 'POST',
@@ -304,7 +295,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         });
         
         const result = await response.json();
-        console.log(`[BUILD] PuyaTs compilation result:`, result);
         
         if (result.ok && result.files) {
           for (const [fileName, fileData] of Object.entries(result.files)) {
@@ -329,7 +319,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       setCurrentFiles(updatedFiles);
       setFileContents(newFileContents);
     } catch (error: any) {
-      console.error('[BUILD] PuyaTs build error:', error);
       handleTerminalOutput(`Build failed: ${error.message || error}`);
     } finally {
       setIsBuilding(false);
@@ -353,7 +342,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         const code = fileContents[filePath];
         
         handleTerminalOutput(`Compiling ${filename}...`);
-        console.log(`[BUILD] TealScript compilation started for ${filename}`);
         
         const response = await fetch('/api/compile', {
           method: 'POST',
@@ -368,7 +356,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         });
         
         const result = await response.json();
-        console.log(`[BUILD] TealScript compilation result:`, result);
         
         if (result.ok && result.result) {
           const updatedFiles = { ...currentFiles };
@@ -403,7 +390,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         }
       }
     } catch (error: any) {
-      console.error('[BUILD] TealScript build error:', error);
       handleTerminalOutput(`Build failed: ${error.message || error}`);
     } finally {
       setIsBuilding(false);
@@ -421,7 +407,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         return;
       }
       
-      console.log(`[BUILD] PuyaPy compilation started`);
       
       const response = await fetch('/api/compile', {
         method: 'POST',
@@ -435,7 +420,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       });
       
       const result = await response.json();
-      console.log(`[BUILD] PuyaPy compilation result:`, result);
       
       if (result.ok && result.files) {
         const updatedFiles = { ...currentFiles };
@@ -464,7 +448,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         handleTerminalOutput(`Compilation failed: ${result.error || 'Unknown error'}`);
       }
     } catch (error: any) {
-      console.error('[BUILD] PuyaPy build error:', error);
       handleTerminalOutput(`Build failed: ${error.message || error}`);
     } finally {
       setIsBuilding(false);
@@ -482,7 +465,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         return;
       }
       
-      console.log(`[BUILD] PyTeal compilation started`);
       
       const response = await fetch('/api/compile', {
         method: 'POST',
@@ -496,7 +478,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       });
       
       const result = await response.json();
-      console.log(`[BUILD] PyTeal compilation result:`, result);
       
       if (result.ok && result.files) {
         const updatedFiles = { ...currentFiles };
@@ -525,7 +506,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         handleTerminalOutput(`Compilation failed: ${result.error || 'Unknown error'}`);
       }
     } catch (error: any) {
-      console.error('[BUILD] PyTeal build error:', error);
       handleTerminalOutput(`Build failed: ${error.message || error}`);
     } finally {
       setIsBuilding(false);
@@ -534,7 +514,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
   const handleBuild = async () => {
     setShowBuildPanel(true);
-    console.log(`[BUILD] Starting build for template: ${selectedTemplate}`);
     
     if (selectedTemplate === 'PuyaTs') {
       await handlePuyaTsBuild();
@@ -583,7 +562,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         const arc32Content = fileContents[filePath];
         const arc32Json = JSON.parse(arc32Content);
         
-        console.log(`[BUILD] Generating client for ${filePath}`);
         
         const response = await fetch('/api/compile', {
           method: 'POST',
@@ -597,7 +575,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         });
         
         const result = await response.json();
-        console.log(`[BUILD] Client generation result:`, result);
         
         if (result.ok && result.files) {
           const updatedFiles = { ...currentFiles };
@@ -627,7 +604,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         }
       }
     } catch (error: any) {
-      console.error('[BUILD] Client generation error:', error);
       handleTerminalOutput(`Client generation failed: ${error.message || error}`);
     } finally {
       setIsBuilding(false);
@@ -658,7 +634,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       URL.revokeObjectURL(url);
       handleTerminalOutput("Snapshot downloaded successfully.");
     } catch (error) {
-      console.error("Snapshot failed:", error);
       handleTerminalOutput(`Snapshot failed: ${error}`);
     } finally {
       setIsBuilding(false);
@@ -668,7 +643,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   const executeDeploy = async (filename: string, args: (string | number)[]) => {
     setIsDeploying(true);
     setDeployStatus('deploying');
-    console.log(`executeDeploy called for ${filename} with args:`, args);
     try {
       const artifactPath = `artifacts/${filename}`;
       const fileContent = fileContents[artifactPath] || '';
@@ -721,7 +695,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         throw new Error('Contract has no CREATE handler (bare or ABI)');
       }
 
-      console.log("Deploy result:", deployResult);
       let appId = 'unknown';
       let txId = 'unknown';
       if (deployResult?.result) {
@@ -735,7 +708,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
           txId = resultAny.transactionId;
         }
       }
-      console.log("Extracted App ID:", appId, "Transaction ID:", txId);
       const deployed = {
         appId,
         txId,
@@ -750,7 +722,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       setDeployedAppId(deployed.appId);
       setDeployStatus('success');
     } catch (error: any) {
-      console.error("Deploy artifact failed:", error);
       setDeployStatus('error');
       toast({ 
         title: "❌ Deployment Failed", 
@@ -765,7 +736,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   };
 
   const deployArtifact = async (filename: string) => {
-    console.log("deployArtifact called with filename:", filename);
     try {
       const artifactPath = `artifacts/${filename}`;
       const fileContent = fileContents[artifactPath] || '';
@@ -774,7 +744,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       }
       
       const appSpec = JSON.parse(fileContent);
-      console.log("Parsed appSpec:", appSpec);
 
       let contractSpec = appSpec;
       if (filename.endsWith('.arc32.json') && appSpec.contract) {
@@ -782,7 +751,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       }
 
       if (!contractSpec.methods || !Array.isArray(contractSpec.methods)) {
-        console.log("No methods found, deploying without args");
         await executeDeploy(filename, []);
         return;
       }
@@ -806,7 +774,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         await executeDeploy(filename, []);
       }
     } catch (error: any) {
-      console.error("Deploy artifact failed:", error);
       setDeployStatus('error');
       toast({ 
         title: "❌ Deployment Failed", 
@@ -839,7 +806,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         handleTerminalOutput('Failed to save project');
       }
     } catch (error) {
-      console.error('Failed to save project:', error);
       handleTerminalOutput('Failed to save project');
     }
   };
@@ -856,7 +822,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         await saveProject();
       }
     } catch (error) {
-      console.error('Failed to save file:', error);
       handleTerminalOutput(`Failed to save: ${activeFile}`);
     }
   };
@@ -915,7 +880,6 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
       toast({ title: "Method executed successfully!", description: `Result: ${result.return}` });
     } catch (error: any) {
-      console.error("Method execution failed:", error);
       toast({ title: "Method execution failed", description: error.message || String(error), variant: "destructive" });
     } finally {
       setIsDeploying(false);
@@ -936,7 +900,8 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
           <span className="font-medium" style={{ color: "var(--text-color)" }}>Algokit IDE</span>
         </div>
         <div className="font-medium text-sm" style={{ color: "var(--text-color)" }}>{selectedTemplateName}</div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <GitHubLogin />
           {wallet && wallet.address ? (
             <button
               onClick={() => setShowWallet(!showWallet)}

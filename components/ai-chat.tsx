@@ -33,7 +33,6 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'your-supabase-
 
 // Validate environment variables
 if (supabaseUrl === "https://toqvsuthxooqjelcayhm.supabase.co") {
-  console.warn('⚠️ Supabase environment variables not configured. Using fallback mode.');
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -73,7 +72,6 @@ const AIChat: React.FC<AIChatProps> = ({ title, selectedTemplate = "Pyteal", act
   useEffect(() => {
     const testConnection = async () => {
       const tableName = getTableName(selectedTemplate);
-      console.log(`🔌 Testing Supabase connection for table: ${tableName}`);
       
       try {
         // Test connection by fetching table info
@@ -83,9 +81,7 @@ const AIChat: React.FC<AIChatProps> = ({ title, selectedTemplate = "Pyteal", act
           .limit(1);
         
         if (error) {
-          console.log(`ℹ️ Embeddings table ${tableName} not available - using fallback context`);
         } else {
-          console.log(`✅ Supabase connection successful for table ${tableName}`);
           
           // Get actual table count
           const { count, error: countError } = await supabase
@@ -93,22 +89,16 @@ const AIChat: React.FC<AIChatProps> = ({ title, selectedTemplate = "Pyteal", act
             .select('*', { count: 'exact', head: true });
           
           if (countError) {
-            console.error(`❌ Error getting table count:`, countError);
           } else {
-            console.log(`📊 Table ${tableName} contains ${count} chunks`);
           }
         }
       } catch (error) {
-        console.error(`❌ Error testing Supabase connection:`, error);
       }
     };
 
     testConnection();
     
     // Add a test message to verify markdown rendering
-    console.log('🧪 Testing markdown rendering...');
-    const testMarkdown = '```typescript\nconst hello = "world";\nconsole.log(hello);\n```';
-    console.log('Test markdown:', testMarkdown);
   }, [selectedTemplate]);
 
   // Get framework-specific context without embeddings
@@ -194,8 +184,6 @@ You output: public hello(name: string, age: uint64): string`,
   // OpenAI API call
   const askOpenAI = async (prompt: string, isCodeEdit: boolean = false) => {
     try {
-      console.log(`🤖 Sending request to OpenAI API...`);
-      console.log(`📝 Prompt length: ${prompt.length} characters`);
       
       const systemPrompt = isCodeEdit 
         ? `You are a coding assistant integrated into an IDE. The user will provide the current code file. Your task is to return the full modified code with the requested changes applied. Do not explain, just return the updated code wrapped in a single code block. Preserve formatting, comments, and structure. Do not remove unrelated code.`
@@ -226,12 +214,9 @@ You output: public hello(name: string, age: uint64): string`,
         throw new Error(`API Error: ${data.error.message || 'Unknown error'}`);
       }
       
-      console.log(`✅ OpenAI API response received successfully`);
-      console.log(`🤖 AI response length: ${data.choices[0].message.content.length} characters`);
       
       return data.choices[0].message.content;
     } catch (error: any) {
-      console.error("❌ OpenAI API error:", error);
       
       if (error.message?.includes('rate-limited') || error.message?.includes('429')) {
         return "The AI service is currently rate-limited. Please try switching to a different model or wait a moment before trying again.";
@@ -244,8 +229,6 @@ You output: public hello(name: string, age: uint64): string`,
   const handleSendMessage = async () => {
     if (inputMessage.trim() !== '' && !isLoading) {
       const userMessage = inputMessage;
-      console.log(`🚀 Starting message processing for: "${userMessage}"`);
-      console.log(`🎯 Selected template: ${selectedTemplate}`);
       
       setMessages((prevMessages) => [...prevMessages, { type: 'user', text: userMessage }]);
       setInputMessage('');
@@ -253,12 +236,9 @@ You output: public hello(name: string, age: uint64): string`,
 
       try {
         // Get framework-specific context
-        console.log(`📚 Getting framework context for ${selectedTemplate}...`);
         const context = getFrameworkContext(selectedTemplate);
-        console.log(`✅ Context loaded successfully`);
 
         // Step 4: Generate answer using OpenAI
-        console.log(`🤖 Step 4: Generating answer with context...`);
         
         // Check if user wants to edit current file
         const isCodeEditRequest = activeFile && fileContent && (
@@ -278,11 +258,6 @@ You output: public hello(name: string, age: uint64): string`,
           prompt = `Use the following context to answer the question about ${selectedTemplate} development:\n\nContext:\n${context}\n\nQuestion: ${userMessage}\n\nPlease provide a helpful and accurate answer based on the context provided. Format your response using markdown for better readability. Use code blocks with appropriate language tags for code examples.`;
         }
         
-        console.log(`📝 Final prompt length: ${prompt.length} characters`);
-        console.log(`📋 Full prompt being sent to AI:`);
-        console.log(`--- START PROMPT ---`);
-        console.log(prompt);
-        console.log(`--- END PROMPT ---`);
         
         const answer = await askOpenAI(prompt, isCodeEditRequest);
         
@@ -290,7 +265,6 @@ You output: public hello(name: string, age: uint64): string`,
         if (isCodeEditRequest && activeFile && onFileUpdate) {
           const extractedCode = extractCodeFromResponse(answer);
           if (extractedCode) {
-            console.log(`🔧 Extracted code for ${activeFile}:`, extractedCode.substring(0, 100) + '...');
             onFileUpdate(activeFile, extractedCode);
             toast({
               title: "File updated!",
@@ -299,17 +273,14 @@ You output: public hello(name: string, age: uint64): string`,
           }
         }
 
-        console.log(`✅ AI response generated successfully`);
         setMessages((prevMessages) => [...prevMessages, { type: 'ai', text: answer }]);
       } catch (error) {
-        console.error("❌ Error processing message:", error);
         setMessages((prevMessages) => [...prevMessages, { 
           type: 'ai', 
           text: "I apologize, but I encountered an error while processing your request. Please try again." 
         }]);
       } finally {
         setIsLoading(false);
-        console.log(`🏁 Message processing completed`);
       }
     }
   };
@@ -324,7 +295,6 @@ You output: public hello(name: string, age: uint64): string`,
   const markdownComponents = {
     code: ({ node, inline, className, children, ...props }: any) => {
       const match = /language-(\w+)/.exec(className || '');
-      console.log('🔍 Code component rendered:', { inline, className, match, children: String(children).substring(0, 50) });
       
       return !inline && match ? (
         <div className="code-block-container relative group">
@@ -478,7 +448,6 @@ You output: public hello(name: string, age: uint64): string`,
               <SelectContent>
                 <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
                 <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
-                <SelectItem value="gpt-4o">GPT-4o</SelectItem>
               </SelectContent>
             </Select>
             {onClose && (

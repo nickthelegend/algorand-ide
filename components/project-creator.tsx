@@ -42,8 +42,10 @@ export function ProjectCreator({ initialFiles, selectedTemplate, selectedTemplat
       const { data: { session } } = await supabase.auth.getSession()
       setUser(session?.user)
       
-      // Skip login - go directly to IDE
-      setShowDialog(false)
+      // Show dialog only if no project param and user is logged in
+      if (!projectParam && session?.user) {
+        setShowDialog(true)
+      }
     }
     getUser()
   }, [projectParam])
@@ -113,6 +115,10 @@ export function ProjectCreator({ initialFiles, selectedTemplate, selectedTemplat
       if (response.ok) {
         const data = await response.json()
         router.push(`/project/${data.project.project_id}`)
+      } else {
+        const errorData = await response.json()
+        console.error('Server error:', errorData)
+        alert(`Failed to create project: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Failed to create project:', error)
@@ -191,13 +197,22 @@ export function ProjectCreator({ initialFiles, selectedTemplate, selectedTemplat
                   </SelectContent>
                 </Select>
               </div>
-              <Button 
-                onClick={createProject} 
-                disabled={!projectName.trim() || loading}
-                className="w-full"
-              >
-                {loading ? 'Creating...' : 'Create Project'}
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setShowDialog(false)} 
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Skip
+                </Button>
+                <Button 
+                  onClick={createProject} 
+                  disabled={!projectName.trim() || loading}
+                  className="flex-1"
+                >
+                  {loading ? 'Creating...' : 'Create Project'}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

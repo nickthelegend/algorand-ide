@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+
     // Insert initial file structure
     const { error: fileError } = await supabase
       .from('project_files')
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ project })
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }

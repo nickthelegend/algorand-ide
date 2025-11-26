@@ -35,8 +35,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid compilation type' }, { status: 400 })
     }
 
-    console.log(`[COMPILER] ${type.toUpperCase()} - Endpoint: ${COMPILER_API_URL}${endpoint}`)
-    console.log(`[COMPILER] Request payload:`, requestBody)
 
     const response = await fetch(`${COMPILER_API_URL}${endpoint}`, {
       method: 'POST',
@@ -46,19 +44,15 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(requestBody)
     })
 
-    console.log(`[COMPILER] Response status: ${response.status}`)
 
     if (type === 'tealscript') {
       const result = await response.text()
-      console.log(`[COMPILER] TealScript response:`, result.substring(0, 200) + '...')
       return NextResponse.json({ ok: response.ok, result })
     } else {
       const result = await response.json()
-      console.log(`[COMPILER] JSON response:`, result)
       return NextResponse.json(result)
     }
   } catch (error: any) {
-    console.error('[COMPILER] Error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
